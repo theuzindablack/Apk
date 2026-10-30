@@ -1,0 +1,310 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divisor de APK para Envio por IA & Anexos</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .drag-active {
+            border-color: #6366f1 !important;
+            background-color: rgba(99, 102, 241, 0.08) !important;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20 shadow-inner">
+                    <i data-lucide="scissors" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        APK Splitter para IA
+                        <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Local Process</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Divida APKs pesados em partes aceitas por prompts de IA, e-mails e anexos</p>
+                </div>
+            </div>
+
+            <!-- Main Tabs Switcher -->
+            <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 w-full sm:w-auto">
+                <button id="nav-split" onclick="switchMode('split')" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all bg-indigo-600 text-white shadow-lg shadow-indigo-600/25">
+                    <i data-lucide="scissors" class="w-4 h-4"></i>
+                    Fatiar / Cortar APK
+                </button>
+                <button id="nav-merge" onclick="switchMode('merge')" class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-slate-200">
+                    <i data-lucide="layers" class="w-4 h-4"></i>
+                    Reconstruir / Juntar
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-8">
+
+        <!-- ================= ABA 1: DIVIDIR APK ================= -->
+        <section id="section-split" class="space-y-6">
+            
+            <!-- Zona de Seleção / Dropzone -->
+            <div id="split-dropzone" class="border-2 border-dashed border-slate-800 hover:border-indigo-500/60 rounded-2xl p-8 sm:p-12 text-center bg-slate-900/40 hover:bg-slate-900/80 transition-all cursor-pointer relative group">
+                <input type="file" id="split-file-input" accept=".apk,.zip,.xapk,.bin,*/*" class="hidden" onchange="handleFileSelect(event)">
+                <div class="flex flex-col items-center justify-center gap-4">
+                    <div class="p-4 bg-indigo-500/10 text-indigo-400 rounded-2xl group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all border border-indigo-500/20">
+                        <i data-lucide="file-up" class="w-10 h-10"></i>
+                    </div>
+                    <div>
+                        <p class="text-base font-semibold text-slate-200">Arraste e solte seu arquivo APK aqui</p>
+                        <p class="text-xs text-slate-400 mt-1">Também aceita qualquer tipo de arquivo (.xapk, .zip, .mp4, etc.)</p>
+                    </div>
+                    <button type="button" onclick="document.getElementById('split-file-input').click()" class="mt-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-all border border-slate-700 shadow-sm flex items-center gap-2">
+                        <i data-lucide="folder" class="w-4 h-4"></i>
+                        Escolher Arquivo no Dispositivo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Painel de Configuração do Arquivo Carregado -->
+            <div id="split-config-card" class="hidden bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-2xl backdrop-blur-sm">
+                <!-- Banner de Arquivo -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-slate-950/80 rounded-xl border border-slate-800">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 shrink-0">
+                            <i data-lucide="smartphone" class="w-6 h-6"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h3 id="split-file-name" class="font-bold text-slate-100 text-sm truncate">meu_app.apk</h3>
+                            <p id="split-file-size" class="text-xs text-slate-400 mt-0.5">Tamanho total: 0 MB</p>
+                        </div>
+                    </div>
+                    <button onclick="resetSplitter()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1.5 bg-rose-500/10 px-3 py-1.5 rounded-lg border border-rose-500/20 shrink-0">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Cancelar
+                    </button>
+                </div>
+
+                <!-- Opções de Tamanho por Parte -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">Escolha o limite por parte (para contornar os limites da IA/Chat):</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <button type="button" onclick="setChunkPreset(10)" class="preset-btn p-3 bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-xl text-left transition-all group">
+                            <div class="text-xs font-bold text-slate-200 group-hover:text-indigo-400">10 MB</div>
+                            <div class="text-[10px] text-slate-500">Ideal para IAs rígidas</div>
+                        </button>
+                        <button type="button" onclick="setChunkPreset(25)" class="preset-btn p-3 bg-slate-950 border border-indigo-500 bg-indigo-500/10 rounded-xl text-left transition-all group">
+                            <div class="text-xs font-bold text-indigo-400">25 MB</div>
+                            <div class="text-[10px] text-slate-400">Padrão ChatGPT / E-mail</div>
+                        </button>
+                        <button type="button" onclick="setChunkPreset(50)" class="preset-btn p-3 bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-xl text-left transition-all group">
+                            <div class="text-xs font-bold text-slate-200 group-hover:text-indigo-400">50 MB</div>
+                            <div class="text-[10px] text-slate-500">Limites médios de Anexo</div>
+                        </button>
+                        <button type="button" onclick="activateCustomChunk()" class="preset-btn p-3 bg-slate-950 border border-slate-800 hover:border-indigo-500 rounded-xl text-left transition-all group">
+                            <div class="text-xs font-bold text-slate-200 group-hover:text-indigo-400">Personalizado</div>
+                            <div class="text-[10px] text-slate-500">Digite seu valor em MB</div>
+                        </button>
+                    </div>
+
+                    <!-- Input Personalizado (Oculto por padrão) -->
+                    <div id="custom-chunk-box" class="hidden pt-2">
+                        <div class="flex items-center gap-3">
+                            <input type="number" id="custom-mb-input" min="1" max="500" value="15" oninput="calculateSplitPreview()" class="w-32 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
+                            <span class="text-xs text-slate-400">Megabytes (MB) por parte</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumo em Tempo Real -->
+                <div class="p-4 bg-slate-950/40 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-300 gap-2">
+                    <span class="flex items-center gap-2">
+                        <i data-lucide="calculator" class="w-4 h-4 text-indigo-400"></i>
+                        Resultado estimado: <strong id="preview-parts-count" class="text-indigo-300">0 partes</strong>
+                    </span>
+                    <span id="preview-chunk-size" class="text-slate-400">~0 MB cada</span>
+                </div>
+
+                <!-- Botão Processar -->
+                <button onclick="executeSplit()" class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="scissors" class="w-4 h-4"></i>
+                    Fatiar APK Agora
+                </button>
+            </div>
+
+            <!-- Lista de Partes Geradas para Download -->
+            <div id="split-results-card" class="hidden bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-5 shadow-2xl">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                    <div>
+                        <h3 class="font-bold text-slate-100 text-base flex items-center gap-2">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+                            Partes Prontas para Download
+                        </h3>
+                        <p class="text-xs text-slate-400">Baixe individualmente e envie cada arquivo para a IA ou anexo</p>
+                    </div>
+                    <button onclick="downloadAllZip()" id="zip-download-btn" class="hidden text-xs bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 px-3.5 py-2 rounded-xl border border-indigo-500/30 transition-all items-center gap-2 shrink-0">
+                        <i data-lucide="archive" class="w-4 h-4"></i> Baixar Todas (.ZIP)
+                    </button>
+                </div>
+
+                <!-- Container com as Partes -->
+                <div id="parts-container" class="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                    <!-- Dinâmico -->
+                </div>
+
+                <!-- Instruções de Envio para a IA -->
+                <div class="p-4 bg-indigo-950/30 border border-indigo-500/20 rounded-xl space-y-2 text-xs text-indigo-200">
+                    <p class="font-semibold flex items-center gap-1.5">
+                        <i data-lucide="lightbulb" class="w-4 h-4 text-amber-400"></i> Como enviar para a IA?
+                    </p>
+                    <p class="text-indigo-300/80 leading-relaxed">
+                        Anexe uma parte por vez na janela de conversa da IA (ChatGPT, Claude, etc.). Você pode instruir a IA dizendo: <em>"Estou enviando a parte X do APK. Aguarde até eu enviar todas as partes para depois juntá-las ou analisá-las."</em>
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ================= ABA 2: RECONSTRUIR / JUNTAR PARTES ================= -->
+        <section id="section-merge" class="hidden space-y-6">
+            
+            <div id="merge-dropzone" class="border-2 border-dashed border-slate-800 hover:border-emerald-500/60 rounded-2xl p-8 sm:p-12 text-center bg-slate-900/40 hover:bg-slate-900/80 transition-all cursor-pointer group">
+                <input type="file" id="merge-file-input" multiple class="hidden" onchange="handleMergeFilesSelect(event)">
+                <div class="flex flex-col items-center justify-center gap-4">
+                    <div class="p-4 bg-emerald-500/10 text-emerald-400 rounded-2xl group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all border border-emerald-500/20">
+                        <i data-lucide="layers" class="w-10 h-10"></i>
+                    </div>
+                    <div>
+                        <p class="text-base font-semibold text-slate-200">Selecione todas as partes baixadas</p>
+                        <p class="text-xs text-slate-400 mt-1">Arraste os arquivos (.parte1, .parte2...) simultaneamente aqui</p>
+                    </div>
+                    <button type="button" onclick="document.getElementById('merge-file-input').click()" class="mt-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-all border border-slate-700 shadow-sm flex items-center gap-2">
+                        <i data-lucide="folder-plus" class="w-4 h-4"></i>
+                        Carregar Partes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card de Ordenação e Junção -->
+            <div id="merge-config-card" class="hidden bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-5 shadow-2xl">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div>
+                        <h3 class="font-bold text-slate-100 text-sm">Partes Identificadas</h3>
+                        <p class="text-xs text-slate-400">Verifique se as partes estão na ordem numérica sequencial exata</p>
+                    </div>
+                    <button onclick="resetMerger()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1.5 bg-rose-500/10 px-3 py-1.5 rounded-lg border border-rose-500/20">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Limpar
+                    </button>
+                </div>
+
+                <!-- Lista de partes ordenáveis -->
+                <div id="merge-list-container" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    <!-- Dinâmico -->
+                </div>
+
+                <!-- Configuração do nome final -->
+                <div class="p-4 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
+                    <label class="block text-xs font-semibold text-slate-300">Nome do arquivo restaurado final:</label>
+                    <input type="text" id="merge-filename-input" placeholder="aplicativo_reconstituido.apk" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500">
+                    <p class="text-[11px] text-slate-500">Mantenha a extensão <strong>.apk</strong> no final para que o Android reconheça o instalador.</p>
+                </div>
+
+                <button onclick="executeMerge()" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="combine" class="w-4 h-4"></i>
+                    Unir Partes e Baixar APK Original
+                </button>
+            </div>
+
+            <!-- Card Tutorial de Comandos de Terminal -->
+            <div class="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <div class="flex items-center gap-2 text-slate-200 font-bold text-sm">
+                    <i data-lucide="terminal" class="w-5 h-5 text-amber-400"></i>
+                    <span>Como juntar via Linha de Comando (Sem usar o site)</span>
+                </div>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Se você preferir juntar o APK no seu computador sem abrir este site, abra o Prompt de Comando ou Terminal na pasta onde estão os arquivos e execute:
+                </p>
+
+                <!-- CMD Windows -->
+                <div class="space-y-1.5">
+                    <span class="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+                        <i data-lucide="monitor" class="w-3.5 h-3.5 text-blue-400"></i> No Windows (Prompt de Comando / CMD):
+                    </span>
+                    <div class="bg-slate-950 p-3 rounded-xl font-mono text-xs text-emerald-400 border border-slate-800 overflow-x-auto select-all">
+                        <code>copy /b app.apk.parte1 + app.apk.parte2 app_reconstituido.apk</code>
+                    </div>
+                </div>
+
+                <!-- Linux / Mac -->
+                <div class="space-y-1.5 pt-1">
+                    <span class="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+                        <i data-lucide="terminal-square" class="w-3.5 h-3.5 text-purple-400"></i> No Linux / macOS / Android (Termux):
+                    </span>
+                    <div class="bg-slate-950 p-3 rounded-xl font-mono text-xs text-emerald-400 border border-slate-800 overflow-x-auto select-all">
+                        <code>cat app.apk.parte* > app_reconstituido.apk</code>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950/80 py-4 text-center text-xs text-slate-500">
+        <p>Desenvolvido para envio seguro e fracionado de arquivos para IAs. 100% Client-Side API.</p>
+    </footer>
+
+    <!-- JSZip CDN para suporte opcional a download em ZIP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <script>
+        // Inicializar Lucide Icons
+        lucide.createIcons();
+
+        // Estados da Aplicação
+        let currentSplitFile = null;
+        let activeChunkMB = 25; // Default 25MB
+        let generatedPartsList = [];
+        let mergeFilesList = [];
+
+        // Alternar Abas (Split vs Merge)
+        function switchMode(mode) {
+            const splitSec = document.getElementById('section-split');
+            const mergeSec = document.getElementById('section-merge');
+            const navSplit = document.getElementById('nav-split');
+            const navMerge = document.getElementById('nav-merge');
+
+            if (mode === 'split') {
+                splitSec.classList.remove('hidden');
+                mergeSec.classList.add('hidden');
+                navSplit.className = "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all bg-indigo-600 text-white shadow-lg shadow-indigo-600/25";
+                navMerge.className = "flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-slate-200";
+            } else {
+                splitSec.classList.add('hidden');
+                mergeSec.classL
